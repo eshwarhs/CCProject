@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  rabbitmq:
+    container_name: rabbitmq
+    hostname: rabbitmq
+    image: rabbitmq
+    ports:
+      - "5672:5672"
+
+  orchestrator:
+    container_name: orchestrator
+    build: ./Orchestrator
+    image: orchestrator
+    depends_on:
+      - rabbitmq
+    command: sh -c "sleep 45 && python -u orch.py"
+    restart: on-failure
+    ports:
+      - "80:80"
+
+  master:
+    container_name: master
+    build: ./Master
+    image: master
+    depends_on:
+      - rabbitmq
+    restart: on-failure
+
+
