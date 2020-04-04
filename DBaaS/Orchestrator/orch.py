@@ -94,7 +94,7 @@ def create_slave():
 	cont_create = requests.post(url, json=obj)
 	print(cont_create)
 	cont_id = str(cont_create.json()["Id"])
-	url = 'http://172.17.0.1:5555/networks/CCProject_default/connect'
+	url = 'http://172.17.0.1:5555/networks/dbaas_default/connect'
 	obj = {"Container":cont_id}
 	net_add = requests.post(url, json=obj)
 	print(net_add)
