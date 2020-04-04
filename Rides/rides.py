@@ -243,7 +243,7 @@ def clear_count():
 
 @app.route('/api/v1/db/clear',methods=["POST"])
 def clear_db():
-	url = 'http://orchestrator:80/api/v1/db/write'
+	url = 'http://3.210.156.166:80/api/v1/db/write'
 	myobj = {"command": "delete","table":"users"}
 	response = requests.post(url, json = myobj)
 	myobj = {"command": "delete","table":"rides"}
