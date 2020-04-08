@@ -78,11 +78,6 @@ def reset_count():
 
 
 def write_to_file(command):
-	'''url = 'http://172.17.0.1:5000/writesqlcmd'
-	obj = {"cmd":command}
-	response = requests.post(url, json=obj)'''
-	#data = request.get_json()
-	#print(data["cmd"])
 	with open('commands.txt','a') as fd:
 		c = command+'\n'
 		fd.write(c)
@@ -101,12 +96,6 @@ def create_slave():
 	url = 'http://172.17.0.1:5555/containers/'+cont_id+'/start'
 	run_cont = requests.post(url)
 	print(run_cont)
-	#url = 'http://172.17.0.1:5000/getpid'
-	#obj = {"id":"'"+cont_id+"'"}
-	#pid = requests.post(url, json=obj)
-	#print(pid)
-	#print(pid.text)
-	#print(pid.content)
 	url = 'http://172.17.0.1:5555/containers/'+cont_id+'/top'
 	resp = requests.get(url)
 	res = resp.json()
@@ -271,7 +260,8 @@ def crash_slave():
 	pid = list(container_ids.values())[0]
 	kill_slave(cid)
 	del container_ids[cid]
-	create_slave()
+	if(len(container_ids)==0):
+		create_slave()
 	l=[]
 	l.append(str(pid))
 	return jsonify(l), 200
