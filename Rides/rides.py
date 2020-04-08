@@ -250,6 +250,8 @@ def clear_db():
 	response = requests.post(url, json = myobj)
 	myobj = {"command": "delete","table":"ridepool"}
 	response = requests.post(url, json = myobj)
+	url = 'http://3.210.156.166:80/api/v1/db/clear'
+	response = requests.post(url)
 	return jsonify({}), 200
 
 

@@ -215,6 +215,12 @@ def write_db():
 	return jsonify({}),200
 
 
+@app.route('/api/v1/db/clear',methods=["POST"])
+def clear_db():
+	open('commands.txt', 'w').close()
+	return jsonify({}),200
+
+
 @app.route('/api/v1/db/read',methods=["POST"])
 def read_db():
 	increment()
