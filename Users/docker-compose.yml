@@ -5,7 +5,7 @@ services:
     container_name: users
     build: .
     image: users:latest
-    command: gunicorn -w 3 app:app -b 0.0.0.0:8080
+    command: gunicorn -w 3 users:app -b 0.0.0.0:8080
     restart: always
     ports:
       - "80:8080"
