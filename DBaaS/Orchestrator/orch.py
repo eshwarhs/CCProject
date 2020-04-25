@@ -57,8 +57,6 @@ class ReadDBClient(object):
 		return json.loads(self.response)
 
 
-
-
 def increment():
 	f=open("count.txt", "r")
 	count = f.read()
