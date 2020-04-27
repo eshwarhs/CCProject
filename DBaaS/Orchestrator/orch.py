@@ -10,8 +10,14 @@ import pika
 import uuid
 import time
 from datetime import datetime
+from kazoo.client import KazooClient
+
+zk = KazooClient(hosts='zoo:2181')
+zk.start()
+zk.ensure_path("/workers")
 
 container_ids = {}
+master = {}
 g=0
 
 app=Flask(__name__)
@@ -57,6 +63,61 @@ class ReadDBClient(object):
 		return json.loads(self.response)
 
 
+
+@zk.ChildrenWatch("/workers")
+def f(ch):
+	print("Watch triggered")
+	print(ch)
+	m=0
+	if len(ch)==0:
+		print("no worker")
+		return
+	
+	for c in ch:
+		d,s=zk.get("/workers/"+c)
+		#If data is not empty and data==master
+		#print(d,s)
+		d = d.decode('utf-8')
+		role = d.split(";")[2].strip()
+		#print(len(role))
+		#print(role=="master")
+		#print(not d)
+		if(role=="master"):
+			m=1
+			print("master exists")
+			break
+	#Making the first node in the list as the master
+	print(m)
+	if(m==0):
+		min_pid = float("inf")
+		min_cid = ""
+		cr = ""
+		for c in ch:
+			d,s = zk.get("/workers/"+c)
+			d = d.decode('utf-8')
+			cid = d.split(";")[0]
+			pid = d.split(";")[1]
+			role = d.split(";")[2]
+			if(int(pid) < min_pid):
+				min_pid = int(pid)
+				min_cid = cid
+				cr = c
+		#print(min_pid)
+		#print(min_cid)
+		print(cr+" is the master")
+		strin = cid+";"+pid+";"+"master"
+		zk.set("/workers/"+cr,strin.encode('utf-8'))
+		global master
+		master["master"] = min_cid
+		master["pid"] = min_pid
+		global container_ids
+		del container_ids[min_cid]
+		if(len(container_ids)==0):
+			create_slave()
+
+
+
+
 def increment():
 	f=open("count.txt", "r")
 	count = f.read()
@@ -83,7 +144,7 @@ def write_to_file(command):
 
 def create_slave():
 	url='http://172.17.0.1:5555/containers/create'
-	obj = {"image":"slave"}
+	obj = {"image":"worker"}
 	cont_create = requests.post(url, json=obj)
 	print(cont_create)
 	cont_id = str(cont_create.json()["Id"])
@@ -93,7 +154,6 @@ def create_slave():
 	print(net_add)
 	url = 'http://172.17.0.1:5555/containers/'+cont_id+'/start'
 	run_cont = requests.post(url)
-	print(run_cont)
 	url = 'http://172.17.0.1:5555/containers/'+cont_id+'/top'
 	resp = requests.get(url)
 	res = resp.json()
@@ -208,6 +268,7 @@ def clear_db():
 	return jsonify({}),200
 
 
+
 @app.route('/api/v1/db/read',methods=["POST"])
 def read_db():
 	increment()
@@ -262,6 +323,15 @@ def crash_slave():
 		create_slave()
 	l=[]
 	l.append(str(pid))
+	return jsonify(l), 200
+
+
+@app.route('/api/v1/crash/master',methods=["POST"])
+def crash_master():
+	global master
+	kill_slave(master["master"])
+	l=[]
+	l.append(str(master["pid"]))
 	return jsonify(l), 200
 
 

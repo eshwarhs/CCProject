@@ -3,4 +3,4 @@ ADD . /app
 WORKDIR /app
 RUN pip install -r requirements.txt
 RUN python db.py
-CMD [ "sh", "-c", "sleep 1 && python -u slave.py" ]
+CMD [ "sh", "-c", "sleep 1 && python -u worker.py" ]

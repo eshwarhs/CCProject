@@ -4,8 +4,24 @@ from flask import Flask,render_template,jsonify,request,abort
 import requests
 import sqlite3
 import re
+import subprocess
 import csv
+import time
+import socket
 from datetime import datetime
+from kazoo.client import KazooClient
+
+time.sleep(10)
+
+connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+channel = connection.channel()
+channel1 = connection.channel()
+channel.exchange_declare(exchange='sync', exchange_type='fanout')
+result = channel.queue_declare(queue='', exclusive=True)
+queue_name = result.method.queue
+channel.queue_bind(exchange='sync', queue=queue_name)
+channel1.queue_declare(queue='readQ', durable=True)
+
 
 url = 'http://orchestrator:80/getsqlcmd'
 response = requests.get(url)
@@ -23,16 +39,6 @@ if(response.status_code!=204):
 		except Exception as e:
 			print("Exception in _query: %s" % e)
 
-
-
-connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
-channel = connection.channel()
-channel1 = connection.channel()
-channel.exchange_declare(exchange='sync', exchange_type='fanout')
-result = channel.queue_declare(queue='', exclusive=True)
-queue_name = result.method.queue
-channel.queue_bind(exchange='sync', queue=queue_name)
-channel1.queue_declare(queue='readQ', durable=True)
 
 def writedb(ch, method, properties, body):
 	print("Write DB in slave")
