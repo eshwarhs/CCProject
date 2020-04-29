@@ -50,9 +50,9 @@ def new_ride():
 					source=int(row[0])
 				if row[0]==intdest:
 					dest=int(row[0])
-		url = 'http://assignment3-loadbalancer-1244058846.us-east-1.elb.amazonaws.com/api/v1/users'
+		url = 'http://Rideshare-1230259410.us-east-1.elb.amazonaws.com/api/v1/users'
 		#myobj = {"command": "select","table":"users","where":"username="+"'"+created_by+"'"}
-		response = requests.get(url=url, headers={'Origin':'http://ec2-3-225-163-104.compute-1.amazonaws.com'})
+		response = requests.get(url=url, headers={'Origin':'http://ec2-100-26-84-211.compute-1.amazonaws.com'})
 		if(response.status_code==204):
 			return jsonify ({}),400
 		else:
@@ -62,7 +62,7 @@ def new_ride():
 			if(source==0 or dest==0 or (source>0 and dest>0 and source==dest) or not(isvalidDate) or (created_by not in y)):
 				return jsonify ({}),400
 			elif((created_by in y) and isvalidDate):
-				url = 'http://3.210.156.166:80/api/v1/db/write'
+				url = 'http://34.230.254.179:80/api/v1/db/write'
 				myobj = {"command": "insert","table":"rides","column_list":{"created_by":"'"+created_by+"'","time_stamp":"'"+data["timestamp"]+"'","source":"'"+intsource+"'","destination":"'"+intdest+"'"}}
 				response = requests.post(url, json = myobj)
 				return jsonify ({}),201
@@ -88,7 +88,7 @@ def upcoming_rides():
 	if(src==0 or dest==0 or (src>0 and dest>0 and src==dest)):
 		return jsonify({}),400
 	else:
-		url = 'http://3.210.156.166:80/api/v1/db/read'
+		url = 'http://34.230.254.179:80/api/v1/db/read'
 		myobj = {"command": "select","table":"rides","where":"source="+str(src)+" and destination="+str(dest)}
 		response = requests.post(url, json = myobj)
 		x =  response.json()
@@ -116,7 +116,7 @@ def upcoming_rides():
 @app.route('/api/v1/rides/<int:rideid>',methods=["GET"])
 def ride_details(rideid):
 	increment()
-	url = 'http://3.210.156.166:80/api/v1/db/read'
+	url = 'http://34.230.254.179:80/api/v1/db/read'
 	myobj = {"command": "select","table":"rides","where":"rideid="+str(rideid)}
 	response = requests.post(url, json = myobj)
 	n = len(response.json())
@@ -143,13 +143,13 @@ def join_ride(rideid):
 	#print(data)
 	if("username" in data):
 		username = data["username"]
-		url = 'http://assignment3-loadbalancer-1244058846.us-east-1.elb.amazonaws.com/api/v1/users'
-		resp1 = requests.get(url=url, headers={'Origin':'http://ec2-3-225-163-104.compute-1.amazonaws.com'})
+		url = 'http://Rideshare-1230259410.us-east-1.elb.amazonaws.com/api/v1/users'
+		resp1 = requests.get(url=url, headers={'Origin':'http://ec2-100-26-84-211.compute-1.amazonaws.com'})
 		if(resp1.status_code==204):
 			return jsonify({}),400
 		else:
 			y = resp1.json()
-			url = 'http://3.210.156.166:80/api/v1/db/read'
+			url = 'http://34.230.254.179:80/api/v1/db/read'
 			obj2 = {"command":"select","table":"rides","where":"rideid="+str(rideid)}
 			resp2 = requests.post(url, json = obj2)
 			n2 = len(resp2.json())
@@ -159,7 +159,7 @@ def join_ride(rideid):
 				resp3 = requests.post(url, json = obj3)
 				n3 = len(resp3.json())
 
-				url1 = 'http://3.210.156.166:80/api/v1/db/write'
+				url1 = 'http://34.230.254.179:80/api/v1/db/write'
 				obj = {"command":"select","table":"ridepool","where":"rideid="+str(rideid)+" and "+"username='"+data["username"]+"'"}
 				resp = requests.post(url, json=obj)
 				if(len(resp.json())==0 and n3==0):
@@ -179,12 +179,12 @@ def join_ride(rideid):
 @app.route('/api/v1/rides/<int:rideid>',methods=["DELETE"])
 def delete_ride(rideid):
 	increment()
-	url = 'http://3.210.156.166:80/api/v1/db/read'
+	url = 'http://34.230.254.179:80/api/v1/db/read'
 	myobj = {"command": "select","table":"rides","where":"rideid="+str(rideid)}
 	response = requests.post(url, json = myobj)
 	n = len(response.json())
 	if(n>0):
-		url1 = 'http://3.210.156.166:80/api/v1/db/write'
+		url1 = 'http://34.230.254.179:80/api/v1/db/write'
 		obj1 = {"command": "delete","table":"rides","where":"rideid="+str(rideid)}
 		resp1 = requests.post(url1, json = obj1)
 		obj2 = {"command": "delete","table":"ridepool","where":"rideid="+str(rideid)}
@@ -198,7 +198,7 @@ def delete_ride(rideid):
 def total_rides():
 	increment()
 	if request.method == 'GET':
-		url = 'http://3.210.156.166:80/api/v1/db/read'
+		url = 'http://34.230.254.179:80/api/v1/db/read'
 		myobj = {"command": "select","table":"rides"}
 		response = requests.post(url, json = myobj)
 		n = len(response.json())
@@ -243,14 +243,14 @@ def clear_count():
 
 @app.route('/api/v1/db/clear',methods=["POST"])
 def clear_db():
-	url = 'http://3.210.156.166:80/api/v1/db/write'
+	url = 'http://34.230.254.179:80/api/v1/db/write'
 	myobj = {"command": "delete","table":"users"}
 	response = requests.post(url, json = myobj)
 	myobj = {"command": "delete","table":"rides"}
 	response = requests.post(url, json = myobj)
 	myobj = {"command": "delete","table":"ridepool"}
 	response = requests.post(url, json = myobj)
-	url = 'http://3.210.156.166:80/api/v1/db/clear'
+	url = 'http://34.230.254.179:80/api/v1/db/clear'
 	response = requests.post(url)
 	return jsonify({}), 200
 

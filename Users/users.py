@@ -31,13 +31,13 @@ def add_user():
 	if("username" in data and "password" in data):
 		new_username = request.get_json()["username"]
 		new_passw = (request.get_json()["password"]).lower()
-		url = 'http://3.210.156.166:80/api/v1/db/read'
+		url = 'http://34.230.254.179:80/api/v1/db/read'
 		myobj = {"command": "select","table":"users","where":"username="+"'"+new_username+"'"}
 		response = requests.post(url, json = myobj)
 		y = response.json()
 		n = len(y)
 		if(n==0 and re.match(r"[0-9a-f]{40}", new_passw) and len(new_username)>0 and len(new_passw)==40):
-			url = 'http://3.210.156.166:80/api/v1/db/write'
+			url = 'http://34.230.254.179:80/api/v1/db/write'
 			myobj = {"command": "insert","table":"users","column_list":{"username":"'"+new_username+"'","password":"'"+new_passw+"'"}}
 			response = requests.post(url, json = myobj)
 			return jsonify ({}),201
@@ -52,20 +52,20 @@ def remove_user(username):
 	increment()
 	if request.method == 'DELETE':
 		if(username):
-			url = 'http://3.210.156.166:80/api/v1/db/read'
+			url = 'http://34.230.254.179:80/api/v1/db/read'
 			myobj = {"command": "select","table":"users","where":"username="+"'"+username+"'"}
 			response = requests.post(url, json = myobj)
 			y = response.json()
 			n = len(y)
-			url = 'http://3.210.156.166:80/api/v1/db/read'
+			url = 'http://34.230.254.179:80/api/v1/db/read'
 			myobj = {"command": "select","table":"rides","where":"created_by="+"'"+username+"'"}
 			response = requests.post(url, json = myobj)
 			n1 = len(response.json())
 			if(n==1 and n1==0):
-				url = 'http://3.210.156.166:80/api/v1/db/write'
+				url = 'http://34.230.254.179:80/api/v1/db/write'
 				myobj = {"command": "delete","table":"users","where":"username="+"'"+username+"'"}
 				response = requests.post(url, json = myobj)
-				url = 'http://3.210.156.166:80/api/v1/db/write'
+				url = 'http://34.230.254.179:80/api/v1/db/write'
 				myobj = {"command": "delete","table":"ridepool","where":"username="+"'"+username+"'"}
 				response = requests.post(url, json = myobj)
 				return jsonify ({}),200
@@ -82,7 +82,7 @@ def remove_user(username):
 @app.route('/api/v1/users',methods=["GET"])
 def list_users():
 	increment()
-	url = 'http://3.210.156.166:80/api/v1/db/read'
+	url = 'http://34.230.254.179:80/api/v1/db/read'
 	myobj = {"command":"select","table":"users","column_list":["username"]}
 	response = requests.post(url, json = myobj)
 	y = response.json()
@@ -120,14 +120,14 @@ def clear_count():
 
 @app.route('/api/v1/db/clear',methods=["POST"])
 def clear_db():
-	url = 'http://3.210.156.166:80/api/v1/db/write'
+	url = 'http://34.230.254.179:80/api/v1/db/write'
 	myobj = {"command": "delete","table":"users"}
 	response = requests.post(url, json = myobj)
 	myobj = {"command": "delete","table":"rides"}
 	response = requests.post(url, json = myobj)
 	myobj = {"command": "delete","table":"ridepool"}
 	response = requests.post(url, json = myobj)
-	url = 'http://3.210.156.166:80/api/v1/db/clear'
+	url = 'http://34.230.254.179:80/api/v1/db/clear'
 	response = requests.post(url)
 	return jsonify({}), 200
 
