@@ -8,7 +8,6 @@ services:
     ports:
       - "5672:5672"
 
-
   zoo:
     container_name: zoo
     image: zookeeper

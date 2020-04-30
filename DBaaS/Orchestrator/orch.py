@@ -75,18 +75,12 @@ def f(ch):
 	
 	for c in ch:
 		d,s=zk.get("/workers/"+c)
-		#If data is not empty and data==master
-		#print(d,s)
 		d = d.decode('utf-8')
 		role = d.split(";")[2].strip()
-		#print(len(role))
-		#print(role=="master")
-		#print(not d)
 		if(role=="master"):
 			m=1
 			print("master exists")
 			break
-	#Making the first node in the list as the master
 	print(m)
 	if(m==0):
 		min_pid = float("inf")
@@ -112,8 +106,7 @@ def f(ch):
 		master["pid"] = min_pid
 		global container_ids
 		del container_ids[min_cid]
-		if(len(container_ids)==0):
-			create_slave()
+		create_slave()
 
 
 
