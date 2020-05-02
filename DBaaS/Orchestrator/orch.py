@@ -315,7 +315,7 @@ def crash_slave():
 	if(len(container_ids)==0):
 		create_slave()
 	l=[]
-	l.append(str(pid))
+	l.append(pid)
 	return jsonify(l), 200
 
 
@@ -324,7 +324,7 @@ def crash_master():
 	global master
 	kill_slave(master["master"])
 	l=[]
-	l.append(str(master["pid"]))
+	l.append(master["pid"])
 	return jsonify(l), 200
 
 
