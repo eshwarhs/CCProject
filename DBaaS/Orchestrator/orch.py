@@ -300,7 +300,10 @@ def read_db():
 @app.route('/api/v1/worker/list',methods=["GET"])
 def list_worker():
 	global container_ids
+	global master
 	y = list(container_ids.values())
+	z = master["pid"]
+	y.append(z)
 	return jsonify(sorted(y)), 200
 
 
