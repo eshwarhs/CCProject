@@ -31,13 +31,13 @@ def add_user():
 	if("username" in data and "password" in data):
 		new_username = request.get_json()["username"]
 		new_passw = (request.get_json()["password"]).lower()
-		url = 'http://34.230.254.179:80/api/v1/db/read'
+		url = 'http://0.0.0.0:8080/api/v1/db/read'
 		myobj = {"command": "select","table":"users","where":"username="+"'"+new_username+"'"}
 		response = requests.post(url, json = myobj)
 		y = response.json()
 		n = len(y)
 		if(n==0 and re.match(r"[0-9a-f]{40}", new_passw) and len(new_username)>0 and len(new_passw)==40):
-			url = 'http://34.230.254.179:80/api/v1/db/write'
+			url = 'http://0.0.0.0:8080/api/v1/db/write'
 			myobj = {"command": "insert","table":"users","column_list":{"username":"'"+new_username+"'","password":"'"+new_passw+"'"}}
 			response = requests.post(url, json = myobj)
 			return jsonify ({}),201
@@ -52,20 +52,20 @@ def remove_user(username):
 	increment()
 	if request.method == 'DELETE':
 		if(username):
-			url = 'http://34.230.254.179:80/api/v1/db/read'
+			url = 'http://0.0.0.0:8080/api/v1/db/read'
 			myobj = {"command": "select","table":"users","where":"username="+"'"+username+"'"}
 			response = requests.post(url, json = myobj)
 			y = response.json()
 			n = len(y)
-			url = 'http://34.230.254.179:80/api/v1/db/read'
+			url = 'http://ec2-3-225-163-104.compute-1.amazonaws.com/api/v1/db/read'
 			myobj = {"command": "select","table":"rides","where":"created_by="+"'"+username+"'"}
 			response = requests.post(url, json = myobj)
 			n1 = len(response.json())
 			if(n==1 and n1==0):
-				url = 'http://34.230.254.179:80/api/v1/db/write'
+				url = 'http://0.0.0.0:8080/api/v1/db/write'
 				myobj = {"command": "delete","table":"users","where":"username="+"'"+username+"'"}
 				response = requests.post(url, json = myobj)
-				url = 'http://34.230.254.179:80/api/v1/db/write'
+				url = 'http://ec2-3-225-163-104.compute-1.amazonaws.com/api/v1/db/write'
 				myobj = {"command": "delete","table":"ridepool","where":"username="+"'"+username+"'"}
 				response = requests.post(url, json = myobj)
 				return jsonify ({}),200
@@ -82,7 +82,7 @@ def remove_user(username):
 @app.route('/api/v1/users',methods=["GET"])
 def list_users():
 	increment()
-	url = 'http://34.230.254.179:80/api/v1/db/read'
+	url = 'http://0.0.0.0:8080/api/v1/db/read'
 	myobj = {"command":"select","table":"users","column_list":["username"]}
 	response = requests.post(url, json = myobj)
 	y = response.json()
@@ -118,18 +118,88 @@ def clear_count():
 	return jsonify({}),200
 
 
+@app.route('/api/v1/db/write',methods=["POST"])
+def write_db():
+	data = request.get_json()
+	if("table" not in data or "command" not in data):
+		return "Incorrect command/data.",400
+	else:
+		table=data["table"]
+	if(data["command"]=="insert"):
+		cols = data["column_list"]
+		s=""
+		for i in cols:
+			s=s+i+","
+		s=s[:len(s)-1]
+		t=""
+		for i in cols:
+			t=t+cols[i]+","
+		t=t[:len(t)-1]
+		sql = "insert into "+table+"("+s+") VALUES ("+t+")"
+	elif(data["command"]=="delete"):
+		s = ""
+		sql = "delete from "+table 
+		if("where" in data):
+			sql = sql + " where "+ data["where"]
+	else:
+		return "Incorrect command/data.",400
+	try:
+		with sqlite3.connect("users.db") as con:
+			cur = con.cursor()
+			cur.execute(sql)
+			con.commit()
+		return "Ok",200
+	except:
+		return "Incorrect command/data.",400
+
+@app.route('/api/v1/db/read',methods=["POST"])
+def read_db():
+	data = request.get_json()
+	if("table" not in data):
+		return "Incorrect command/data.",400
+	else:
+		table=data["table"]
+	sql = "select "
+	if(data["command"]=="select"):
+		if("column_list" in data):
+			for i in data["column_list"]:
+				sql = sql + i + ","
+			sql = sql[:len(sql)-1] + " from " + table
+		else:
+			sql = sql+"* from "+table
+		if("where" in data):
+			sql = sql + " where "+ data["where"]
+		if("group by" in data):
+			sql = sql + " group by "
+			for i in data["group by"]:
+				sql = sql + i + ","
+			sql = sql[:len(sql)-1]
+		try:
+			with sqlite3.connect("users.db") as con:
+				cur = con.cursor()
+				cur.execute(sql)
+				rows = cur.fetchall()
+				con.commit()
+			return jsonify(rows),200
+		except:
+			return "Incorrect command/data.",400
+	else:
+		return "Incorrect command/data.",400
+
+
 @app.route('/api/v1/db/clear',methods=["POST"])
 def clear_db():
-	url = 'http://34.230.254.179:80/api/v1/db/write'
-	myobj = {"command": "delete","table":"users"}
-	response = requests.post(url, json = myobj)
-	myobj = {"command": "delete","table":"rides"}
-	response = requests.post(url, json = myobj)
-	myobj = {"command": "delete","table":"ridepool"}
-	response = requests.post(url, json = myobj)
-	url = 'http://34.230.254.179:80/api/v1/db/clear'
-	response = requests.post(url)
-	return jsonify({}), 200
+	try:
+		with sqlite3.connect("users.db") as con:
+			cur = con.cursor()
+			cur.execute("drop table users")
+			cur.execute('''CREATE TABLE USERS(username TEXT PRIMARY KEY,password TEXT NOT NULL);''')
+			con.commit()
+			url = 'http://ec2-3-225-163-104.compute-1.amazonaws.com/api/v1/db/clear'
+			response = requests.post(url=url)
+		return "OK",200
+	except:
+		return "Incorrect command/data.",400
 
 
 if __name__ == '__main__':	

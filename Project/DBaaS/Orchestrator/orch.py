@@ -75,12 +75,18 @@ def f(ch):
 	
 	for c in ch:
 		d,s=zk.get("/workers/"+c)
+		#If data is not empty and data==master
+		#print(d,s)
 		d = d.decode('utf-8')
 		role = d.split(";")[2].strip()
+		#print(len(role))
+		#print(role=="master")
+		#print(not d)
 		if(role=="master"):
 			m=1
 			print("master exists")
 			break
+	#Making the first node in the list as the master
 	print(m)
 	if(m==0):
 		min_pid = float("inf")
@@ -106,7 +112,8 @@ def f(ch):
 		master["pid"] = min_pid
 		global container_ids
 		del container_ids[min_cid]
-		create_slave()
+		if(len(container_ids)==0):
+			create_slave()
 
 
 
@@ -300,10 +307,7 @@ def read_db():
 @app.route('/api/v1/worker/list',methods=["GET"])
 def list_worker():
 	global container_ids
-	global master
 	y = list(container_ids.values())
-	z = master["pid"]
-	y.append(z)
 	return jsonify(sorted(y)), 200
 
 
@@ -318,7 +322,7 @@ def crash_slave():
 	if(len(container_ids)==0):
 		create_slave()
 	l=[]
-	l.append(pid)
+	l.append(str(pid))
 	return jsonify(l), 200
 
 
@@ -327,7 +331,7 @@ def crash_master():
 	global master
 	kill_slave(master["master"])
 	l=[]
-	l.append(master["pid"])
+	l.append(str(master["pid"]))
 	return jsonify(l), 200
 
 
