@@ -85,10 +85,8 @@ def on_request(ch, method, props, body):
 	ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-#channel.basic_qos(prefetch_count=1)
 channel1.basic_qos(prefetch_count=1)
 channel.basic_consume(queue=queue_name, on_message_callback=writedb, auto_ack=True)
-#channel.basic_consume(queue='syncQ', on_message_callback=writedb)
 channel1.basic_consume(queue='readQ', on_message_callback=on_request)
 channel.start_consuming()
 channel1.start_consuming()

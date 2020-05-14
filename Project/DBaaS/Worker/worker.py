@@ -44,14 +44,6 @@ def change_to_master(data,stat):
 		print("I am the master")
 		abc.kill()
 		subprocess.Popen(["python","-u","master.py"])
-		#channel.basic_cancel(consumer_tag="")
-		#channel1.basic_cancel(consumer_tag="")
-		#channel.stop_consuming(consumer_tag=None)
-		#channel1.stop_consuming(consumer_tag=None)
-		#channelx = connection.channel()
-		#channelx.queue_declare(queue='hello')
-		#channelx.basic_consume(queue='hello', on_message_callback=callback, auto_ack=True)
-		#channel.start_consuming()
 
 while True:
 	pass

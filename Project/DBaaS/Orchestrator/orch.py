@@ -16,9 +16,9 @@ zk = KazooClient(hosts='zoo:2181')
 zk.start()
 zk.ensure_path("/workers")
 
-container_ids = {}
-master = {}
-g=0
+container_ids = {} 				#list of all slaves
+master = {} 					#details of master container
+g=0 							#flag
 
 app=Flask(__name__)
 
@@ -72,21 +72,16 @@ def f(ch):
 	if len(ch)==0:
 		print("no worker")
 		return
-	
+	#Check if master exists
 	for c in ch:
 		d,s=zk.get("/workers/"+c)
-		#If data is not empty and data==master
-		#print(d,s)
 		d = d.decode('utf-8')
 		role = d.split(";")[2].strip()
-		#print(len(role))
-		#print(role=="master")
-		#print(not d)
 		if(role=="master"):
 			m=1
 			print("master exists")
 			break
-	#Making the first node in the list as the master
+	#Making the node with smallest PID as master
 	print(m)
 	if(m==0):
 		min_pid = float("inf")
@@ -102,8 +97,6 @@ def f(ch):
 				min_pid = int(pid)
 				min_cid = cid
 				cr = c
-		#print(min_pid)
-		#print(min_cid)
 		print(cr+" is the master")
 		strin = cid+";"+pid+";"+"master"
 		zk.set("/workers/"+cr,strin.encode('utf-8'))
@@ -112,12 +105,11 @@ def f(ch):
 		master["pid"] = min_pid
 		global container_ids
 		del container_ids[min_cid]
-		if(len(container_ids)==0):
-			create_slave()
+		create_slave()
 
 
 
-
+#increment number of read requests
 def increment():
 	f=open("count.txt", "r")
 	count = f.read()
@@ -128,20 +120,20 @@ def increment():
 	f.write(str(count))
 	f.close()
 
-
+#reset read request count every 2 minutes
 def reset_count():
 	f=open("count.txt", "w")
 	count=0
 	f.write(str(count))
 	f.close()
 
-
+#File to store all SQL commands
 def write_to_file(command):
 	with open('commands.txt','a') as fd:
 		c = command+'\n'
 		fd.write(c)
 
-
+#To spawn new worker
 def create_slave():
 	url='http://172.17.0.1:5555/containers/create'
 	obj = {"image":"worker"}
@@ -161,7 +153,7 @@ def create_slave():
 	container_ids[cont_id] = int(res["Processes"][0][2])
 	print(container_ids)
 
-
+#Kill a worker
 def kill_slave(contid):
 	url = 'http://172.17.0.1:5555/containers/'+contid+'?force=true'
 	res = requests.delete(url)
@@ -170,7 +162,7 @@ def kill_slave(contid):
 	res = requests.post(url)
 	
 
-
+#This function is called every 2 minutes to scale up/down
 def check_func():
 	url = "http://0.0.0.0:80/api/v1/count"
 	response = requests.get(url=url)
@@ -205,7 +197,7 @@ def check_func():
 def hello_world():
 	return "Orchestrator API"
 
-
+#Called by worker when it is spawned
 @app.route('/getsqlcmd',methods=["GET"])
 def get_cmd():
 	f = open("commands.txt", "r")
@@ -261,7 +253,7 @@ def write_db():
 	connection.close()
 	return jsonify({}),200
 
-
+#clear commands.txt file to optimize
 @app.route('/api/v1/db/clear',methods=["POST"])
 def clear_db():
 	open('commands.txt', 'w').close()
@@ -338,8 +330,8 @@ def crash_master():
 
 if __name__ == '__main__':	
 	app.debug=True
-	open('commands.txt', 'w').close()
+	open('commands.txt', 'w').close() #clearing commands.txt file
 	create_slave()
-	scheduler = BackgroundScheduler()
-	job = scheduler.add_job(check_func, 'interval', minutes=2)
+	scheduler = BackgroundScheduler() #scheduler to run every 2 minutes
+	job = scheduler.add_job(check_func, 'interval', minutes=2) #adding job to scheduler
 	app.run(host="0.0.0.0",port=80,use_reloader=False)
