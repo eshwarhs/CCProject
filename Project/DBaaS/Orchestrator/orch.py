@@ -109,7 +109,6 @@ def f(ch):
 	url = "http://0.0.0.0:80/api/v1/count"
 	response = requests.get(url=url)
 	count = int(response.text)
-	global container_ids
 	cur_slave = len(ch)-1
 	total_slave = int((count-1)/20) + 1
 	print("Total Slaves = ",total_slave)
@@ -119,6 +118,13 @@ def f(ch):
 	if(dif_slave>0):
 		for i in range(dif_slave):
 			create_slave()
+
+	if(cur_slave!=len(container_ids)):
+		difference=cur_slave-len(container_ids)
+		if(difference>0):
+			y = list(container_ids.keys())
+			for rst in y[:difference]:
+				del container_ids[rst]
 
 
 
