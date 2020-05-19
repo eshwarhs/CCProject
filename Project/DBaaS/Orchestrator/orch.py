@@ -105,7 +105,20 @@ def f(ch):
 		master["pid"] = min_pid
 		global container_ids
 		del container_ids[min_cid]
-		create_slave()
+		# create_slave()
+	url = "http://0.0.0.0:80/api/v1/count"
+	response = requests.get(url=url)
+	count = int(response.text)
+	global container_ids
+	cur_slave = len(ch)-1
+	total_slave = int((count-1)/20) + 1
+	print("Total Slaves = ",total_slave)
+	if(total_slave==0):
+		total_slave=1
+	dif_slave = total_slave - cur_slave
+	if(dif_slave>0):
+		for i in range(dif_slave):
+			create_slave()
 
 
 
@@ -311,8 +324,8 @@ def crash_slave():
 	pid = list(container_ids.values())[0]
 	kill_slave(cid)
 	del container_ids[cid]
-	if(len(container_ids)==0):
-		create_slave()
+	# if(len(container_ids)==0):
+	# 	create_slave()
 	l=[]
 	l.append(str(pid))
 	return jsonify(l), 200
