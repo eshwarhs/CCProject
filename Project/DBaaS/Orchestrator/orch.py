@@ -106,10 +106,11 @@ def f(ch):
 		global container_ids
 		del container_ids[min_cid]
 		# create_slave()
+
 	url = "http://0.0.0.0:80/api/v1/count"
 	response = requests.get(url=url)
 	count = int(response.text)
-	cur_slave = len(ch)-1
+	cur_slave = len(ch) - 1
 	total_slave = int((count-1)/20) + 1
 	print("Total Slaves = ",total_slave)
 	if(total_slave==0):
@@ -119,12 +120,7 @@ def f(ch):
 		for i in range(dif_slave):
 			create_slave()
 
-	if(cur_slave!=len(container_ids)):
-		difference=cur_slave-len(container_ids)
-		if(difference>0):
-			y = list(container_ids.keys())
-			for rst in y[:difference]:
-				del container_ids[rst]
+
 
 
 
@@ -330,8 +326,7 @@ def crash_slave():
 	pid = list(container_ids.values())[0]
 	kill_slave(cid)
 	del container_ids[cid]
-	# if(len(container_ids)==0):
-	# 	create_slave()
+	#create_slave()
 	l=[]
 	l.append(str(pid))
 	return jsonify(l), 200
