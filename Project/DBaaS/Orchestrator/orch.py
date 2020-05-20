@@ -128,8 +128,8 @@ def f(ch):
 		d = d.decode('utf-8')
 		cid = d.split(";")[0]
 		ct.append(cid)
-
-	for ijk in container_ids.keys():
+	rs = list(container_ids.keys())
+	for ijk in rs:
 		if ijk not in ct:
 			del container_ids[ijk]
 
