@@ -68,6 +68,17 @@ class ReadDBClient(object):
 def f(ch):
 	print("Watch triggered")
 	print(ch)
+	global container_ids
+	# ct=[]
+	# for c in ch:
+	# 	d,s = zk.get("/workers/"+c)
+	# 	d = d.decode('utf-8')
+	# 	cid = d.split(";")[0]
+	# 	ct.append(cid)
+	# rs = list(container_ids.keys())
+	# for ijk in rs:
+	# 	if ijk not in ct:
+	# 		del container_ids[ijk]
 	m=0
 	if len(ch)==0:
 		print("no worker")
@@ -103,7 +114,7 @@ def f(ch):
 		global master
 		master["master"] = min_cid
 		master["pid"] = min_pid
-		global container_ids
+		
 		del container_ids[min_cid]
 		create_slave()
 
@@ -122,16 +133,7 @@ def f(ch):
 		for i in range(dif_slave):
 			create_slave()
 	container_ids = dict(sorted(container_ids.items(), key=operator.itemgetter(1)))
-	ct=[]
-	for c in ch:
-		d,s = zk.get("/workers/"+c)
-		d = d.decode('utf-8')
-		cid = d.split(";")[0]
-		ct.append(cid)
-	rs = list(container_ids.keys())
-	for ijk in rs:
-		if ijk not in ct:
-			del container_ids[ijk]
+	
 
 
 
