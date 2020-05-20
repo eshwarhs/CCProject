@@ -101,9 +101,9 @@ def f(ch):
 		zk.set("/workers/"+cr,strin.encode('utf-8'))
 		#create_slave()
 
-	f=open("prev.txt", "r")
-	count = f.read()
-	f.close()
+	url = "http://0.0.0.0:80/api/v1/count"
+	response = requests.get(url=url)
+	count = int(response.text)
 	cur_slave = len(ch)-1
 	total_slave = int((count-1)/20) + 1
 	if(total_slave==0):
@@ -174,9 +174,6 @@ def check_func():
 	url = "http://0.0.0.0:80/api/v1/count"
 	response = requests.get(url=url)
 	count = int(response.text)
-	f=open("prev.txt", "w")
-	f.write(str(count))
-	f.close()
 	reset_count()
 	children = zk.get_children("/workers")
 	cur_slave = len(children)-1
