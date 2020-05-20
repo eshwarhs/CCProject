@@ -16,8 +16,6 @@ zk = KazooClient(hosts='zoo:2181')
 zk.start()
 zk.ensure_path("/workers")
 
-container_ids = {} 				#list of all slaves
-master = {} 					#details of master container
 g=0 							#flag
 
 app=Flask(__name__)
@@ -68,17 +66,7 @@ class ReadDBClient(object):
 def f(ch):
 	print("Watch triggered")
 	print(ch)
-	global container_ids
-	# ct=[]
-	# for c in ch:
-	# 	d,s = zk.get("/workers/"+c)
-	# 	d = d.decode('utf-8')
-	# 	cid = d.split(";")[0]
-	# 	ct.append(cid)
-	# rs = list(container_ids.keys())
-	# for ijk in rs:
-	# 	if ijk not in ct:
-	# 		del container_ids[ijk]
+
 	m=0
 	if len(ch)==0:
 		print("no worker")
@@ -111,28 +99,20 @@ def f(ch):
 		print(cr+" is the master")
 		strin = cid+";"+pid+";"+"master"
 		zk.set("/workers/"+cr,strin.encode('utf-8'))
-		global master
-		master["master"] = min_cid
-		master["pid"] = min_pid
-		
-		del container_ids[min_cid]
+		#create_slave()
 
-	url = "http://0.0.0.0:80/api/v1/count"
-	response = requests.get(url=url)
-	count = int(response.text)
-	cur_slave = len(ch) - 1
+	f=open("prev.txt", "r")
+	count = f.read()
+	f.close()
+	cur_slave = len(ch)-1
 	total_slave = int((count-1)/20) + 1
-	print("Current Slaves = ",cur_slave)
-	print("Total Slaves = ",total_slave)
 	if(total_slave==0):
 		total_slave=1
 	dif_slave = total_slave - cur_slave
 	if(dif_slave>0):
-		print("Difference Slave = ",dif_slave)
 		for i in range(dif_slave):
 			create_slave()
-	container_ids = dict(sorted(container_ids.items(), key=operator.itemgetter(1)))
-	
+
 
 
 
@@ -179,9 +159,6 @@ def create_slave():
 	url = 'http://172.17.0.1:5555/containers/'+cont_id+'/top'
 	resp = requests.get(url)
 	res = resp.json()
-	global container_ids
-	container_ids[cont_id] = int(res["Processes"][0][2])
-	print(container_ids)
 
 #Kill a worker
 def kill_slave(contid):
@@ -197,9 +174,12 @@ def check_func():
 	url = "http://0.0.0.0:80/api/v1/count"
 	response = requests.get(url=url)
 	count = int(response.text)
+	f=open("prev.txt", "w")
+	f.write(str(count))
+	f.close()
 	reset_count()
-	global container_ids
-	cur_slave = len(container_ids)
+	children = zk.get_children("/workers")
+	cur_slave = len(children)-1
 	total_slave = int((count-1)/20) + 1
 	if(total_slave==0):
 		total_slave=1
@@ -210,6 +190,15 @@ def check_func():
 	elif(dif_slave<0):
 		print("KILL")
 		dif_slave = dif_slave*(-1)
+		container_ids = {}
+		for c in children:
+			d,s = zk.get("/workers/"+c)
+			d = d.decode('utf-8')
+			cid = d.split(";")[0]
+			pid = d.split(";")[1]
+			role = d.split(";")[2]
+			if(role=="slave"):
+				container_ids[cid]=int(pid)
 		container_ids = dict(sorted(container_ids.items(), key=operator.itemgetter(1),reverse=True))
 		print(container_ids)
 		y = list(container_ids.keys())
@@ -219,7 +208,6 @@ def check_func():
 			print(xx)
 			kill_slave(i)
 			del container_ids[i]
-	print(container_ids)
 
 
 
@@ -328,31 +316,57 @@ def read_db():
 
 @app.route('/api/v1/worker/list',methods=["GET"])
 def list_worker():
-	global container_ids
-	y = list(container_ids.values())
+	children = zk.get_children('/workers')
+	y = []
+	for c in children:
+		d,s = zk.get("/workers/"+c)
+		d = d.decode('utf-8')
+		cid = d.split(";")[0]
+		pid = d.split(";")[1]
+		y.append(int(pid))
 	return jsonify(sorted(y)), 200
 
 
 @app.route('/api/v1/crash/slave',methods=["POST"])
 def crash_slave():
-	global container_ids
-	container_ids = dict(sorted(container_ids.items(), key=operator.itemgetter(1), reverse=True))
-	cid = list(container_ids.keys())[0] 
-	pid = list(container_ids.values())[0]
-	kill_slave(cid)
-	del container_ids[cid]
+	max_pid = 0
+	max_cid = ""
+	children = zk.get_children('/workers')
+	for c in children:
+		d,s = zk.get("/workers/"+c)
+		d = d.decode('utf-8')
+		cid = d.split(";")[0]
+		pid = d.split(";")[1]
+		role = d.split(";")[2]
+		if((int(pid) > max_pid) and role=="slave"):
+			max_pid = int(pid)
+			max_cid = cid
+
+	kill_slave(max_cid)
 	#create_slave()
 	l=[]
-	l.append(str(pid))
+	l.append(str(max_pid))
 	return jsonify(l), 200
 
 
 @app.route('/api/v1/crash/master',methods=["POST"])
 def crash_master():
-	global master
-	kill_slave(master["master"])
+	children = zk.get_children('/workers')
+	mcid = ""
+	mpic = 0
+	for c in children:
+		d,s = zk.get("/workers/"+c)
+		d = d.decode('utf-8')
+		cid = d.split(";")[0]
+		pid = d.split(";")[1]
+		role = d.split(";")[2]
+		if(role=="master"):
+			mcid = cid
+			mpid = pid
+			break
+	kill_slave(mcid)
 	l=[]
-	l.append(str(master["pid"]))
+	l.append(str(mpid))
 	return jsonify(l), 200
 
 
