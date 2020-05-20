@@ -116,7 +116,6 @@ def f(ch):
 		master["pid"] = min_pid
 		
 		del container_ids[min_cid]
-		create_slave()
 
 	url = "http://0.0.0.0:80/api/v1/count"
 	response = requests.get(url=url)
