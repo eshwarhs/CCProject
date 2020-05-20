@@ -16,7 +16,7 @@ zk = KazooClient(hosts='zoo:2181')
 zk.start()
 zk.ensure_path("/workers")
 
-g=0 							#flag
+g=0 							    #flag
 
 app=Flask(__name__)
 
