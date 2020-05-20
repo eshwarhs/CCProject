@@ -117,11 +117,22 @@ def f(ch):
 	if(total_slave==0):
 		total_slave=1
 	dif_slave = total_slave - cur_slave
-	print("Difference Slave = ",diff_slave)
 	if(dif_slave>0):
+		print("Difference Slave = ",dif_slave)
 		for i in range(dif_slave):
 			create_slave()
 	container_ids = dict(sorted(container_ids.items(), key=operator.itemgetter(1)))
+	ct=[]
+	for c in ch:
+		d,s = zk.get("/workers/"+c)
+		d = d.decode('utf-8')
+		cid = d.split(";")[0]
+		ct.append(cid)
+
+	for ijk in container_ids.keys():
+		if ijk not in ct:
+			del container_ids[ijk]
+
 
 
 
